@@ -2,6 +2,8 @@ import sys
 import urllib.parse
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
+import datetime
+import time
 
 def get_top_product_links(keyword):
     url = 'https://www.buyma.com/r/' + keyword
@@ -13,41 +15,51 @@ def get_top_product_links(keyword):
     
 def find_title(detail_page):
     title = detail_page.find('h1', id="item_h1").find('span', {'itemprop':"name"}).get_text()
-    return title
+    return title.strip().replace(',', '')
 
 def find_inq_count(detail_page):
     count = detail_page.find('p', id='tabmenu_inqcnt').get_text()
-    return count
+    return count.strip().replace(',', '')
 
 def find_access_count(detail_page):
     count = detail_page.find('span', {'class':'ac_count'}).get_text()
-    return count
+    return count.strip().replace(',', '')
 
 def find_fav_count(detail_page):
     count = detail_page.find('span', {'class':'fav_count'}).get_text()
-    return count
+    return count.strip().replace(',', '')
 
 def find_price(detail_page):
     price = detail_page.find('div', id="priceWrap").find('span', {'class':'price_txt'}).get_text()
-    return price
+    return price.strip().replace(',', '')
+
+def find_brand(detail_page):
+    brand = detail_page.find('dl', id="s_brand").find('a', itemprop="brand").get_text()
+    return brand.strip().replace(',', '')
 
 def print_header():
-    print('title, inqury, access, favorities, price')
+    print('timestamp, rank, brand, title, inqury, access, favorities, price')
 
 def print_detail(bs):
-    print(find_title(bs),end=',')
-    print(find_inq_count(bs), end=',')
-    print(find_access_count(bs), end=',')
-    print(find_fav_count(bs), end=',')
-    print(find_price(bs), end=',')
-    print()
+    elements = [find_brand(bs),
+                find_title(bs), 
+                find_inq_count(bs), 
+                find_access_count(bs),
+                find_fav_count(bs),
+                find_price(bs)]
 
-links = get_top_product_links(urllib.parse.quote(sys.argv[1]))
-links = links[0:5]
-print(len(links), 'items found')
-detail_pages = [urlopen(link) for link in links]
-detail_bs_objs = [BeautifulSoup(detail.read(), 'html.parser') for detail in detail_pages]
+    line = ','.join('"{0}"'.format(w) for w in elements)
+    print(line)
+
+keyword = sys.argv[1]
+links = get_top_product_links(urllib.parse.quote(keyword))
 
 print_header()
-for detail_obj in detail_bs_objs:
+for i in range(len(links)):
+    ts = time.time()
+    timestamp = datetime.datetime.fromtimestamp(ts).strftime('"%Y-%m-%d_%H:%M:%S"')
+    detail_page = urlopen(links[i])
+    detail_obj = BeautifulSoup(detail_page.read(), 'html.parser')
+    print(timestamp, end=',')
+    print(i + 1, end=',')
     print_detail(detail_obj)
