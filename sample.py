@@ -31,6 +31,9 @@ def find_price(detail_page):
     price = detail_page.find('div', id="priceWrap").find('span', {'class':'price_txt'}).get_text()
     return price
 
+def print_header():
+    print('title, inqury, access, favorities, price')
+
 def print_detail(bs):
     print(find_title(bs),end=',')
     print(find_inq_count(bs), end=',')
@@ -45,5 +48,6 @@ print(len(links), 'items found')
 detail_pages = [urlopen(link) for link in links]
 detail_bs_objs = [BeautifulSoup(detail.read(), 'html.parser') for detail in detail_pages]
 
+print_header()
 for detail_obj in detail_bs_objs:
     print_detail(detail_obj)
